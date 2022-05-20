@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from time import process_time
 
 np.random.seed(1234)
 np.set_printoptions(threshold=np.inf)
@@ -21,9 +22,11 @@ class Simulation:
         self.total_out_of_s_coefficient = 0
         self.total_into_i_coefficient = 0
         self.total_into_r_coefficient = 0
-        self.history = np.asarray([[self.s, self.e, self.i, self.r]])
+        self.history = [[self.s, self.e, self.i, self.r]]
         self.total_time = 0
-        self.time_steps = np.array([0])
+        self.time_steps = [0]
+        self.unit_time_data = [[self.s, self.e, self.i, self.r]]
+        self.unit_time_step = 1
 
     def update_coefficients(self):
         """
@@ -54,13 +57,13 @@ class Simulation:
         self.history is a numpy array that stores the values of S, E, I, and R at
         each time step in a simulation. It is updated at every time step.
         """
-        self.history = np.append(self.history, [[self.s, self.e, self.i, self.r]], axis=0)
+        self.history.append([self.s, self.e, self.i, self.r])
 
     def time_step(self):
         if self.e == 0 and self.i == 0:
-            self.history = np.append(self.history, [[self.s, self.e, self.i, self.r]], axis=0)
+            self.history.append([self.s, self.e, self.i, self.r])
             self.total_time += 1
-            self.time_steps = np.append(self.time_steps, self.total_time)
+            self.time_steps.append(self.total_time)
             return
         self.update_coefficients()
         """
@@ -84,8 +87,12 @@ class Simulation:
 
         time_array = np.asarray([time_for_out_of_s, time_for_into_i, time_for_into_r])
         self.total_time += min(time_array)
-        self.time_steps = np.append(self.time_steps, self.total_time)
+        self.time_steps.append(self.total_time)
         argmin = np.argmin(time_array)
+
+        while self.unit_time_step <= self.total_time:
+            self.unit_time_data.append([self.s, self.e, self.i, self.r])
+            self.unit_time_step += 1
 
         self.update_seir(argmin)
         self.update_history()
@@ -97,6 +104,8 @@ class Simulation:
         while self.time_steps[-1] < total_time:
             self.time_step()
 
+        self.unit_time_data.append([self.s, self.e, self.i, self.r])
+
     def simulate_till_end(self):
         """
         Simulates SEIR model until E and I categories are zero
@@ -104,37 +113,25 @@ class Simulation:
         while self.e != 0 or self.i != 0:
             self.time_step()
 
+        self.unit_time_data.append([self.s, self.e, self.i, self.r])
+
     def graph(self):
         """
         Graphs the data stored in self.history.
         """
-        s_data, e_data, i_data, r_data = self.history[:, 0], self.history[:, 1], \
-                                         self.history[:, 2], self.history[:, 3]
-        plt.plot(self.time_steps, s_data, label='Susceptible subjects')
-        plt.plot(self.time_steps, e_data, label='Exposed subjects')
-        plt.plot(self.time_steps, i_data, label='Infected subjects')
-        plt.plot(self.time_steps, r_data, label='Removed subjects')
+        time_range = range(self.unit_time_step + 1)
+
+        s_unit_data = np.asarray(self.unit_time_data)[:, 0]
+        e_unit_data = np.asarray(self.unit_time_data)[:, 1]
+        i_unit_data = np.asarray(self.unit_time_data)[:, 2]
+        r_unit_data = np.asarray(self.unit_time_data)[:, 3]
+
+        plt.plot(time_range, s_unit_data, label='Susceptible subjects')
+        plt.plot(time_range, e_unit_data, label='Exposed subjects')
+        plt.plot(time_range, i_unit_data, label='Infected subjects')
+        plt.plot(time_range, r_unit_data, label='Removed subjects')
         plt.legend()
         plt.show()
-
-    def return_unit_time_data(self):
-        """
-        Returns SEIR data indexed by unit time steps
-        """
-        total_time = int(self.time_steps[-1])
-        data = np.asarray([self.history[0]])
-        for i in range(1, total_time + 1):
-            for j in range(len(self.time_steps)):
-                if self.time_steps[j] == i:
-                    data = np.append(data, [self.history[j]], axis=0)
-                    break
-                elif self.time_steps[j] > i:
-                    data = np.append(data, [self.history[j - 1]], axis=0)
-                    break
-        if total_time - self.time_steps[-1] != 0:
-            data = np.append(data, [self.history[-1]], axis=0)
-        return data
-
 
 
 def graph_beta(a, gamma, n, s, i):
@@ -156,13 +153,14 @@ def graph_beta(a, gamma, n, s, i):
 
 if __name__ == '__main__':
     "setting variables"
-    beta = .5  # number of contacts per person per time step
-    a = .2  # parameter controlling latency between exposure and infection
-    gamma = .07  # parameter specifying probability of removal
-    n = 1000  # total population
-    i = 10  # initial number of infected subjects
+    beta = .4  # number of contacts per person per time step
+    a = .1  # parameter controlling latency between exposure and infection
+    gamma = .05  # parameter specifying probability of removal
+    n = 500000  # total population
+    i = 100  # initial number of infected subjects
     s = n - i  # susceptible subjects
 
     sim = Simulation(beta, a, gamma, n, s=s, i=i)
     sim.simulate_till_end()
     sim.graph()
+    print(np.asarray(sim.unit_time_data))
