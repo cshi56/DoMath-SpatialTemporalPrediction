@@ -1,4 +1,6 @@
 import numpy as np
+import random
+import math
 import matplotlib.pyplot as plt
 from time import process_time
 
@@ -73,17 +75,17 @@ class Simulation:
         if self.total_out_of_s_coefficient == 0:
             time_for_out_of_s = np.inf
         else:
-            time_for_out_of_s = -1 * np.log(np.random.uniform()) / self.total_out_of_s_coefficient
+            time_for_out_of_s = -1 * math.log(random.uniform(0, 1)) / self.total_out_of_s_coefficient
 
         if self.total_into_i_coefficient == 0:
             time_for_into_i = np.inf
         else:
-            time_for_into_i = -1 * np.log(np.random.uniform()) / self.total_into_i_coefficient
+            time_for_into_i = -1 * math.log(random.uniform(0, 1)) / self.total_into_i_coefficient
 
         if self.total_into_r_coefficient == 0:
             time_for_into_r = np.inf
         else:
-            time_for_into_r = -1 * np.log(np.random.uniform()) / self.total_into_r_coefficient
+            time_for_into_r = -1 * math.log(random.uniform(0, 1)) / self.total_into_r_coefficient
 
         time_array = np.asarray([time_for_out_of_s, time_for_into_i, time_for_into_r])
         self.total_time += min(time_array)
