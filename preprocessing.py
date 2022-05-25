@@ -29,12 +29,17 @@ def preprocess(file, split_ratio, prior_steps):
     training_data = np.asarray(make_data(training_simulations, prior_steps))
     testing_data = np.asarray(make_data(testing_simulations, prior_steps))
 
-    np.random.shuffle(training_data)
-    np.random.shuffle(testing_data)
+    # np.random.shuffle(training_data)
+    # np.random.shuffle(testing_data)
 
-    return training_data, testing_data
+    x_train = training_data[:, :prior_steps]
+    y_train = training_data[:, prior_steps]
+    x_test = testing_data[:, :prior_steps]
+    y_test = testing_data[:, prior_steps]
+
+    return x_train, y_train, x_test, y_test
 
 
 if __name__ == '__main__':
-    train_data, test_data = preprocess('data.npz', 0.8, 20)
-    print(train_data)
+    x_training, y_training, x_testing, y_testing = preprocess('data.npz', 0.8, 4)
+    print(x_training)
