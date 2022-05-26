@@ -7,16 +7,14 @@ from epidemic_simulation import Simulation
 np.random.seed(1234)
 
 
-def model():
+def model(training_data):
     """
     Returns an LSTM neural network as described in the code below.
     """
     model_to_return = keras.Sequential([
         keras.layers.LSTM(units=128,
-                          input_shape=(x_train.shape[1], x_train.shape[2]),
+                          input_shape=(training_data.shape[1], training_data.shape[2]),
                           return_sequences=False),
-        keras.layers.Dense(units=256, activation=tf.nn.relu),
-        keras.layers.Dense(units=128, activation=tf.nn.relu),
         keras.layers.Dense(units=4)
     ])
     return model_to_return
@@ -32,19 +30,19 @@ def scheduler(epoch, lr):
 
 
 if __name__ == '__main__':
-    EPOCHS = 100
+    EPOCHS = 40
     INITIAL_LR = 0.001
     TRAINING_SPLIT_RATIO = 0.8
     INITIAL_STEPS = 50
-    NAME = 'model_example'  # format model_x-y_from_prior_z, e.g. model_51-100_from_prior_50
+    NAME = 'model_51_from_prior_50_v2'  # format model_x-y_from_prior_z, e.g. model_51-100_from_prior_50
 
     "Mean-normalizing the data helps training immensely."
 
-    x_train, y_train, x_test, y_test = preprocess('data.npz', TRAINING_SPLIT_RATIO, INITIAL_STEPS)
+    x_train, y_train, x_test, y_test = preprocess('../data/data_1000_sims.npz', TRAINING_SPLIT_RATIO, INITIAL_STEPS)
     mean = x_train.mean()
     x_train, y_train, x_test, y_test = x_train/mean, y_train/mean, x_test/mean, y_test/mean
 
-    model = model()
+    model = model(x_train)
 
     model.compile(
         loss='mean_squared_error',
@@ -53,7 +51,7 @@ if __name__ == '__main__':
     )
     callback = tf.keras.callbacks.LearningRateScheduler(scheduler)
     history = model.fit(x_train, y_train, epochs=EPOCHS, validation_data=(x_test, y_test), callbacks=[callback])
-    model.save('module_1_models/model_1')
+    model.save('module_1_models/ + NAME')
 
     start_epoch = 2
 
