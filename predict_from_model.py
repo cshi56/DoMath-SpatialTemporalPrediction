@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from epidemic_simulation import Simulation
 from tensorflow import keras
+from preprocessing import noisify
 
 
 def predict(simulation_data, nn_model, steps, start):
@@ -33,8 +34,9 @@ if __name__ == '__main__':
     data = np.load('data.npz')
     file_names = data.files
 
-    for _ in range(10):
-        random_file = file_names[np.random.randint(0, len(file_names))]
+    for i in range(10):
+        random_file = file_names[i]
         sim_data = data[random_file]
-        model = keras.models.load_model('module_1_models/model_51_from_prior_50')
+        # sim_data = noisify(sim_data, 0.15)
+        model = keras.models.load_model('module_1_models/model_51_from_prior_50_v5')
         predict(sim_data, model, 50, 0)
