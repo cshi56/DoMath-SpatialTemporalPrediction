@@ -1,12 +1,8 @@
 import tensorflow as tf
 from tensorflow import keras
 import numpy as np
-from datetime import datetime, timedelta
-from time import time
 from preprocessing import preprocess, noisify
 import matplotlib.pyplot as plt
-import random
-from epidemic_simulation import Simulation
 
 np.random.seed(1234)
 
@@ -153,7 +149,7 @@ if __name__ == '__main__':
     TRAINING_SPLIT_RATIO = 0.9
     INITIAL_STEPS = 50
     NOISE = 0.15
-    MODEL_PATH = 'models/temporal/model_51_from_prior_50_noisy_15'  # format model_x-y_from_prior_z, e.g. model_51-100_from_prior_50
+    MODEL_PATH = 'temporal_only/models/model_51_from_prior_50_noisy_15'
     DATA_PATH = 'data.npz'
 
     data = np.load(DATA_PATH)
