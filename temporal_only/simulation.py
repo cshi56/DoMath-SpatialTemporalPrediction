@@ -4,6 +4,7 @@ import math
 import matplotlib.pyplot as plt
 from time import process_time
 
+random.seed(1234)
 np.random.seed(1234)
 np.set_printoptions(threshold=np.inf)
 
