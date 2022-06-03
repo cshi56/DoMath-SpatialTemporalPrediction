@@ -116,15 +116,81 @@ class Node:
 class Simulation:
     def __init__(self):
         self.nodes = []
-        self.diffusion_matrix = []
+        self.number_of_nodes = 0
+        self.diffusion_matrix = np.empty((0, 0))
+        self.current_time_step = 1
 
     def add_node(self, node):
         self.nodes.append(node)
-        # something ab diffusion matrix
+        self.number_of_nodes += 1
+        padding = ((0, 1), (0, 1))
+        self.diffusion_matrix = np.pad(self.diffusion_matrix,
+                                       pad_width=padding,
+                                       mode='constant',
+                                       constant_values=0.0)
+
+    def populate_diffusion_matrix(self):
+        for node_index in range(self.number_of_nodes):
+            for index in range(self.number_of_nodes):
+                minimal_n = min(self.nodes[node_index].n, self.nodes[index].n)
+                if index == node_index:
+                    continue
+                diffusion_number = int(1 * random.uniform(0, 1) * minimal_n /
+                                       (self.number_of_nodes * 4 ** (abs(node_index - index))))
+                self.diffusion_matrix[node_index][index] = diffusion_number
+                self.diffusion_matrix[index][node_index] = diffusion_number
+
+    def get_accumulated_seir_from_diff_matrix(self, node_index):
+        accumulated_seir = [0, 0, 0, 0]
+
+        for index in range(self.number_of_nodes):
+            total_diff_number = self.diffusion_matrix[node_index][index]
+            node = self.nodes[index]
+
+            s_transfer_in = int(total_diff_number * node.s / node.n)
+            e_transfer_in = int(total_diff_number * node.e / node.n)
+            i_transfer_in = int(total_diff_number * node.i / node.n)
+            r_transfer_in = total_diff_number - s_transfer_in - e_transfer_in - i_transfer_in
+
+            accumulated_seir[0] += s_transfer_in
+            accumulated_seir[1] += e_transfer_in
+            accumulated_seir[2] += i_transfer_in
+            accumulated_seir[3] += r_transfer_in
+
+        for index in range(self.number_of_nodes):
+            total_diff_number = self.diffusion_matrix[node_index][index]
+            node = self.nodes[node_index]
+
+            s_transfer_out = int(total_diff_number * node.s / node.n)
+            e_transfer_out = int(total_diff_number * node.e / node.n)
+            i_transfer_out = int(total_diff_number * node.i / node.n)
+            r_transfer_out = total_diff_number - s_transfer_out - e_transfer_out - i_transfer_out
+
+            accumulated_seir[0] -= s_transfer_out
+            accumulated_seir[1] -= e_transfer_out
+            accumulated_seir[2] -= i_transfer_out
+            accumulated_seir[3] -= r_transfer_out
+
+        return accumulated_seir
+
+    def diffuse(self):
+        accumulated_seir_dic = {}
+
+        for node_index in range(self.number_of_nodes):
+            accumulated_seir_dic[node_index] = self.get_accumulated_seir_from_diff_matrix(node_index)
+
+        for node_index in range(self.number_of_nodes):
+            self.nodes[node_index].s += accumulated_seir_dic[node_index][0]
+            self.nodes[node_index].e += accumulated_seir_dic[node_index][1]
+            self.nodes[node_index].i += accumulated_seir_dic[node_index][2]
+            self.nodes[node_index].r += accumulated_seir_dic[node_index][3]
 
     def simulate_single_time_unit(self):
+        print('Simulating time step ' + str(self.current_time_step) + '.')
         for node in self.nodes:
             node.simulate_single_time_unit()
+        self.diffuse()
+        self.current_time_step += 1
 
 
 if __name__ == '__main__':
@@ -135,7 +201,44 @@ if __name__ == '__main__':
     S = 499900
     E = 0
     I = 100
+    NODES = 100
+    STEPS = 2000
 
-    new_node = Node(ALPHA, BETA, GAMMA, N, S, E, I)
-    new_node.simulate()
-    new_node.graph()
+    new_sim = Simulation()
+    for _ in range(NODES):
+        alpha = random.uniform(.07, .14)
+        beta = .5
+        gamma = random.uniform(.02, .07)
+        n = random.randrange(10000, 100000)
+        if _ == 0:
+            i = 10
+        else:
+            i = 0
+        s = n - i
+        e = 0
+        node_to_add = Node(alpha, beta, gamma, n, s, 0, i)
+        new_sim.add_node(node_to_add)
+
+    new_sim.populate_diffusion_matrix()
+    print(new_sim.diffusion_matrix)
+
+    for _ in range(STEPS):
+        new_sim.simulate_single_time_unit()
+
+    all_data = np.asarray(new_sim.nodes[0].unit_time_history)
+    for index in range(1, NODES):
+        this_node = new_sim.nodes[index]
+        all_data += np.asarray(this_node.unit_time_history)
+
+    history = all_data
+
+    time_data = history[:, 0] / NODES
+    s_data = history[:, 1]
+    e_data = history[:, 2]
+    i_data = history[:, 3]
+    r_data = history[:, 4]
+
+    plt.plot(time_data, e_data, label='Exposed subjects')
+    plt.plot(time_data, i_data, label='Infected subjects')
+    plt.legend()
+    plt.show()
