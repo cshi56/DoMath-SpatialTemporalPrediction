@@ -37,6 +37,6 @@ if __name__ == '__main__':
     for i in range(10):
         random_file = file_names[i]
         sim_data = data[random_file]
-        # sim_data = noisify(sim_data, 0.15)
-        model = keras.models.load_model('module_1_models/model_51_from_prior_50_v5')
+        sim_data = noisify(sim_data, 0.15)
+        model = keras.models.load_model('../module_1_models/model_51_from_prior_50_noisy_15')
         predict(sim_data, model, 50, 0)
