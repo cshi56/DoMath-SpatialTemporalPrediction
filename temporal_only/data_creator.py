@@ -1,10 +1,10 @@
-from epidemic_simulation import Simulation
+from simulation import Simulation
 import numpy as np
 import random
 
-with open('data.npz', 'wb') as f:
+with open('data_200_sims.npz', 'wb') as f:
     all_data = []
-    for _ in range(100):
+    for _ in range(200):
         beta = random.uniform(.1, .5)
         a = random.uniform(.07, .14)
         gamma = random.uniform(.02, .07)

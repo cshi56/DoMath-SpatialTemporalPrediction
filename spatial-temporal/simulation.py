@@ -206,9 +206,9 @@ if __name__ == '__main__':
 
     new_sim = Simulation()
     for _ in range(NODES):
-        alpha = random.uniform(.07, .14)
-        beta = .5
-        gamma = random.uniform(.02, .07)
+        alpha = 0.1
+        beta = random.uniform(0.1, 0.5)
+        gamma = 0.05
         n = random.randrange(10000, 100000)
         if _ == 0:
             i = 10
