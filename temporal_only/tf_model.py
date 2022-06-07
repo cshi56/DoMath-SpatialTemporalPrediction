@@ -5,45 +5,14 @@ from preprocessing import preprocess, noisify
 import matplotlib.pyplot as plt
 
 np.random.seed(1234)
-
-
-class SimulationData:
-    def __init__(self, unit_time_data, prior_steps):
-        self.unit_time_data = unit_time_data
-        self.length_of_sim = len(unit_time_data)
-        self.prior_steps = prior_steps
-
-    def get_data_and_labels(self):
-        """
-        Returns data and labels for a single simulation according to specified prior_steps.
-        Ensures that lengths of data and labels are some multiple of 32.
-        """
-        x = []
-        y = []
-        for i in range(self.length_of_sim - self.prior_steps):
-            x.append(np.asarray(self.unit_time_data[i:i + self.prior_steps]))
-            y.append(self.unit_time_data[i + self.prior_steps])
-
-        x_to_add = np.asarray(x[-1])
-        y_to_add = np.asarray(y[-1])
-
-        while len(x) % 32 != 0:
-            x.append(x_to_add)
-            y.append(y_to_add)
-
-        x = np.asarray(x)
-        y = np.asarray(y)
-
-        x_mean = x.mean()
-        x = x / x_mean
-        y = y / x_mean
-        return x, y
+tf.random.set_seed(1234)
 
 
 class SimpleLSTM:
     def __init__(self,
                  units,
                  prior_steps,
+                 future_steps,
                  loss_function='mean_squared_error',
                  learning_rate=0.001,
                  learning_rate_decay=1.0):
@@ -59,42 +28,27 @@ class SimpleLSTM:
             keras.layers.LSTM(units=units,
                               input_shape=(self.prior_steps, 4),
                               stateful=False),
-            keras.layers.Dense(units=4)
+            keras.layers.Dense(units=4*future_steps)
         ])
         self.model.compile(loss=loss_function,
-                           optimizer=keras.optimizers.Adam(learning_rate=learning_rate),
+                           optimizer=keras.optimizers.Adam(learning_rate=learning_rate,
+                                                           beta_1=0.9,
+                                                           beta_2=0.999,
+                                                           epsilon=1E-7,
+                                                           amsgrad=False),
                            metrics='acc')
 
     def scheduler(self, epoch):
         return self.learning_rate * (self.learning_rate_decay ** epoch)
 
-    def train(self, training_sims_unit_data, validation_sims_unit_data, epochs):
+    def train(self, x_train, y_train, x_val, y_val, batch_size, epochs):
         self.epochs = epochs
-        x_train = []
-        y_train = []
-        x_val = []
-        y_val = []
-        for unit_data in training_sims_unit_data:
-            sim_data = SimulationData(unit_data, self.prior_steps)
-            x, y = sim_data.get_data_and_labels()
-            x_train.extend(x)
-            y_train.extend(y)
-        for unit_data in validation_sims_unit_data:
-            sim_data = SimulationData(unit_data, self.prior_steps)
-            x, y = sim_data.get_data_and_labels()
-            x_val.extend(x)
-            y_val.extend(y)
-
-        x_train = np.asarray(x_train)
-        y_train = np.asarray(y_train)
-        x_val = np.asarray(x_val)
-        y_val = np.asarray(y_val)
 
         lr_scheduler = keras.callbacks.LearningRateScheduler(self.scheduler)
 
         self.history = self.model.fit(x_train, y_train,
                                       validation_data=(x_val, y_val),
-                                      batch_size=32,
+                                      batch_size=batch_size,
                                       epochs=epochs,
                                       callbacks=[lr_scheduler])
 
@@ -138,36 +92,47 @@ class SimpleLSTM:
         plt.legend()
         plt.show()
 
+    def summary(self):
+        return self.model.summary()
+
     def save(self, path):
         self.model.save(path, save_format='h5')
 
 
 if __name__ == '__main__':
-    EPOCHS = 30
+    EPOCHS = 100
+    BATCH_SIZE = 32
     INITIAL_LR = 0.001
-    LR_DECAY = 0.7
-    TRAINING_SPLIT_RATIO = 0.9
-    INITIAL_STEPS = 50
+    LR_DECAY = 0.9
+    LOSS = tf.keras.losses.MeanSquaredError('sum_over_batch_size')
+    TRAIN_NUM = 100
+    VAL_NUM = 50
+    TEST_NUM = 50
+    PRIOR_STEPS = 50
+    FUTURE_STEPS = 1
+    STRIDE = 1
     NOISE = 0.15
-    MODEL_PATH = 'temporal_only/models/model_51_from_prior_50_noisy_15'
-    DATA_PATH = 'data.npz'
+    MODEL_PATH = 'temporal_only/models/test'
+    DATA_PATH = '../../data/data_200_sims.npz'
 
-    data = np.load(DATA_PATH)
-    files = data.files
-    first_file = files[0]
-    all_sims_unit_time_data = []
-    for file in files:
-        all_sims_unit_time_data.append(noisify(data[file], NOISE))
+    train_x, train_y, val_x, val_y, test_x, test_y = preprocess(DATA_PATH,
+                                                                TRAIN_NUM,
+                                                                VAL_NUM,
+                                                                TEST_NUM,
+                                                                PRIOR_STEPS,
+                                                                FUTURE_STEPS,
+                                                                stride=STRIDE)
 
     new_model = SimpleLSTM(128,
-                           INITIAL_STEPS,
+                           PRIOR_STEPS,
+                           FUTURE_STEPS,
+                           loss_function=LOSS,
                            learning_rate=INITIAL_LR,
                            learning_rate_decay=LR_DECAY,)
 
-    training_data = all_sims_unit_time_data[:90]
-    validation_data = all_sims_unit_time_data[90:]
+    print(new_model.summary())
 
-    new_model.train(training_data, validation_data, EPOCHS)
+    new_model.train(train_x, train_y, val_x, val_y, BATCH_SIZE, EPOCHS)
     new_model.plot_loss()
     new_model.plot_accuracy()
     new_model.save(MODEL_PATH)

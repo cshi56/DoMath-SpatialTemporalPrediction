@@ -1,77 +1,66 @@
 import numpy as np
+import matplotlib.pyplot as plt
 
 np.set_printoptions(threshold=np.inf)
+np.random.seed(1234)
 
 
-def make_data(simulation_list, prior_steps):
+def zero_one_normalize(sim_data):
+    return sim_data / sum(sim_data[0])
+
+
+def make_data(simulation_list, prior_steps, future_steps=1, stride=1):
     ret = []
     for simulation in simulation_list:
-        if len(simulation) < prior_steps + 1:
+        if len(simulation) < prior_steps + future_steps:
             continue
-        for i in range(len(simulation) - prior_steps):
-            datum = simulation[i: i + prior_steps + 1]
+        for i in range(0, len(simulation) - prior_steps - future_steps + 1, stride):
+            datum = simulation[i: i + prior_steps + future_steps]
             ret.append(datum)
     return ret
 
-def make_data_single_sim(simulation_data, prior_steps):
-    pass
 
-
-def preprocess(file, split_ratio, prior_steps):
+def preprocess(file, train_num, val_num, test_num, prior_steps, future_steps, stride=1):
     all_data = np.load(file)
     file_names = all_data.files
-    training_number = int(len(file_names) * split_ratio)
-    training_simulations = []
-    testing_simulations = []
+    num_files = len(file_names)
+    if num_files < train_num + val_num + test_num:
+        print('Not enough data. File contains ' + str(num_files) + ' simulations, ' +
+              str(train_num + val_num + test_num) + ' needed.')
+        return 0, 0, 0, 0, 0, 0
+    train_sims = []
+    val_sims = []
+    test_sims = []
 
-    for i in range(training_number):
-        training_simulations.append(all_data[file_names[i]])
-    for i in range(training_number, len(file_names)):
-        testing_simulations.append(all_data[file_names[i]])
+    for i in range(train_num):
+        sim_data = np.asarray(all_data[file_names[i]])
+        sim_data = zero_one_normalize(sim_data)
+        train_sims.append(sim_data)
+    for i in range(train_num, train_num + val_num):
+        sim_data = np.asarray(all_data[file_names[i]])
+        sim_data = zero_one_normalize(sim_data)
+        val_sims.append(sim_data)
+    for i in range(train_num + val_num, train_num + val_num + test_num):
+        sim_data = np.asarray(all_data[file_names[i]])
+        sim_data = zero_one_normalize(sim_data)
+        test_sims.append(sim_data)
 
-    training_data = np.asarray(make_data(training_simulations, prior_steps))
-    testing_data = np.asarray(make_data(testing_simulations, prior_steps))
-
-    x_train = training_data[:, :prior_steps]
-    y_train = training_data[:, prior_steps]
-    x_test = testing_data[:, :prior_steps]
-    y_test = testing_data[:, prior_steps]
-
-    return x_train, y_train, x_test, y_test
-
-
-def preprocess_individual_sims(file, split_ratio, prior_steps):
-    all_data = np.load(file)
-    file_names = all_data.files
-    training_number = int(len(file_names) * split_ratio)
-    training_simulations = []
-    testing_simulations = []
-
-    for i in range(training_number):
-        training_simulations.append([all_data[file_names[i]]])
-    for i in range(training_number, len(file_names)):
-        testing_simulations.append([all_data[file_names[i]]])
-
-    print(training_simulations)
-    print(testing_simulations)
-
-    training_data = []
-    testing_data = []
-
-    for simulation in training_simulations:
-        pass
-
-
-
-    training_data = np.asarray(make_data(training_simulations, prior_steps))
-    testing_data = np.asarray(make_data(testing_simulations, prior_steps))
+    training_data = np.asarray(make_data(train_sims, prior_steps, future_steps=future_steps, stride=stride))
+    validation_data = np.asarray(make_data(val_sims, prior_steps, future_steps=future_steps, stride=stride))
+    testing_data = np.asarray(make_data(test_sims, prior_steps, future_steps=future_steps, stride=stride))
 
     x_train = training_data[:, :prior_steps]
-    y_train = training_data[:, prior_steps]
+    y_train = training_data[:, prior_steps:]
+    x_val = validation_data[:, :prior_steps]
+    y_val = validation_data[:, prior_steps:]
     x_test = testing_data[:, :prior_steps]
-    y_test = testing_data[:, prior_steps]
+    y_test = testing_data[:, prior_steps:]
 
-    return x_train, y_train, x_test, y_test
+    y_train = y_train.reshape(len(x_train), 4 * future_steps)
+    y_val = y_val.reshape(len(x_val), 4 * future_steps)
+    y_test = y_test.reshape(len(x_test), 4 * future_steps)
+
+    return x_train, y_train, x_val, y_val, x_test, y_test
 
 
 def noisify(data, noise_amount):
@@ -80,4 +69,6 @@ def noisify(data, noise_amount):
 
 
 if __name__ == '__main__':
-    x_training, y_training, x_testing, y_testing = preprocess_individual_sims('data.npz', 0.8, 4)
+    x_training, y_training, x_valid, y_valid, x_testing, y_testing = \
+        preprocess('../../data/data_200_sims.npz', 100, 50, 30, 50, 1, 1)
+    print(y_training[0])
