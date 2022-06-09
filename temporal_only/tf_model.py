@@ -50,7 +50,8 @@ class SimpleLSTM:
                                       validation_data=(x_val, y_val),
                                       batch_size=batch_size,
                                       epochs=epochs,
-                                      callbacks=[lr_scheduler])
+                                      callbacks=[lr_scheduler],
+                                      shuffle=True)
 
     def plot_loss(self):
         if self.history is None:
@@ -100,6 +101,10 @@ class SimpleLSTM:
 
 
 if __name__ == '__main__':
+    PRIOR_STEPS = 50
+    UNITS = 128
+    FUTURE_STEPS = 1
+
     EPOCHS = 100
     BATCH_SIZE = 32
     INITIAL_LR = 0.001
@@ -108,12 +113,14 @@ if __name__ == '__main__':
     TRAIN_NUM = 100
     VAL_NUM = 50
     TEST_NUM = 50
-    PRIOR_STEPS = 50
-    FUTURE_STEPS = 1
-    STRIDE = 1
+    STRIDE = 5
     NOISE = 0.15
-    MODEL_PATH = 'temporal_only/models/test'
+    MODEL_PATH = 'models/test'
     DATA_PATH = '../../data/data_200_sims.npz'
+
+    prior_steps_list = [5, 20, 50]
+    units_list = [32, 64, 128]
+    future_steps_list = [1, 4, 16]
 
     train_x, train_y, val_x, val_y, test_x, test_y = preprocess(DATA_PATH,
                                                                 TRAIN_NUM,
@@ -123,7 +130,7 @@ if __name__ == '__main__':
                                                                 FUTURE_STEPS,
                                                                 stride=STRIDE)
 
-    new_model = SimpleLSTM(128,
+    new_model = SimpleLSTM(UNITS,
                            PRIOR_STEPS,
                            FUTURE_STEPS,
                            loss_function=LOSS,
