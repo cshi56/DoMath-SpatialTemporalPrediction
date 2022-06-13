@@ -9,7 +9,7 @@ from decimal import *
 np.random.seed(1234)
 
 
-def seir_from_deterministic_model(n, s_zero, e_zero, i_zero, alpha, beta, gamma, time, steps_per_day=100):
+def seir_from_deterministic_model(n, s_zero, e_zero, i_zero, alpha, beta, gamma, time, steps_per_day=10):
     r_zero = n - s_zero - e_zero - i_zero
     current_seir = np.asarray([s_zero, e_zero, i_zero, r_zero], dtype=float)
     all_seir = [current_seir]

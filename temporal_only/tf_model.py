@@ -27,7 +27,10 @@ class SimpleLSTM:
         self.model = keras.Sequential([
             keras.layers.LSTM(units=units,
                               input_shape=(self.prior_steps, 4),
+                              return_sequences=True,
                               stateful=False),
+            keras.layers.LSTM(units=128),
+            keras.layers.Dense(units=128),
             keras.layers.Dense(units=4*future_steps)
         ])
         self.model.compile(loss=loss_function,
@@ -102,20 +105,20 @@ class SimpleLSTM:
 
 if __name__ == '__main__':
     PRIOR_STEPS = 50
-    UNITS = 128
+    UNITS = 256
     FUTURE_STEPS = 1
 
     EPOCHS = 100
     BATCH_SIZE = 32
     INITIAL_LR = 0.001
-    LR_DECAY = 0.9
+    LR_DECAY = 0.95
     LOSS = tf.keras.losses.MeanSquaredError('sum_over_batch_size')
     TRAIN_NUM = 100
     VAL_NUM = 50
     TEST_NUM = 50
-    STRIDE = 5
+    STRIDE = 1
     NOISE = 0.15
-    MODEL_PATH = 'models/test'
+    MODEL_PATH = 'models/m5'
     DATA_PATH = '../../data/data_200_sims.npz'
 
     prior_steps_list = [5, 20, 50]
@@ -135,7 +138,7 @@ if __name__ == '__main__':
                            FUTURE_STEPS,
                            loss_function=LOSS,
                            learning_rate=INITIAL_LR,
-                           learning_rate_decay=LR_DECAY,)
+                           learning_rate_decay=LR_DECAY)
 
     print(new_model.summary())
 

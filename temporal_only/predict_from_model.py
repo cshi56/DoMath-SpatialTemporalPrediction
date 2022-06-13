@@ -14,6 +14,7 @@ def predict(simulation_data, nn_model, steps, start):
     """
     normalized_data = np.asarray(simulation_data) / 500000
     initial_data = np.asarray(normalized_data[start:start + steps])
+    print(initial_data)
     initial_data = np.expand_dims(initial_data, 0)
     predicted_data = [[0, 0, 0, 0]]
     length_of_sim = len(normalized_data)
@@ -60,7 +61,7 @@ if __name__ == '__main__':
     LENGTH_OF_FORECAST = 50
     STRIDE = 50
 
-    model = keras.models.load_model('models/test')
+    model = keras.models.load_model('models/m5')
 
     data = np.load('../../data/data_200_sims.npz')
     file_names = data.files
@@ -68,11 +69,8 @@ if __name__ == '__main__':
     for i in range(100, 150):
         validation_sims.append(np.asarray(data[file_names[i]]))
 
-    print(evaluation_metric_for_input(validation_sims, model, 50, LENGTH_OF_FORECAST, STRIDE))
+    #print(evaluation_metric_for_input(validation_sims, model, 50, LENGTH_OF_FORECAST, STRIDE))
 
-#    for i in range(10):
-#        random_file = file_names[i]
-#        sim_data = data[random_file]
-#        #  sim_data = noisify(sim_data, 0.15)
-#        model = keras.models.load_model('models/test')
-#        predict(sim_data, model, 50, 0)
+    for sim_data in validation_sims:
+        #  sim_data = noisify(sim_data, 0.15)
+        predict(sim_data, model, 50, 0)

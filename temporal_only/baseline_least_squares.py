@@ -1,8 +1,9 @@
 from simulation import Simulation
 import numpy as np
 from scipy import optimize
-from baseline import seir_from_deterministic_model
+from baseline_posterior_prob import seir_from_deterministic_model
 import matplotlib.pyplot as plt
+from preprocessing import noisify
 
 np.random.seed(1234)
 
@@ -60,22 +61,55 @@ if __name__ == '__main__':
     BETA = 0.5
     GAMMA = 0.07
     TIME = 200
-    TOLERANCE = 1E-10
+    TOLERANCE = 1E-100
 
-    sim = Simulation(BETA, ALPHA, GAMMA, N, s=S, e=E, i=I)
-    sim.simulate(TIME)
-    sim_data = sim.unit_time_data
-    print(sim_data)
+    INPUT_LENGTH = 50
+    LENGTH_OF_FORECAST = 50
+    STRIDE = 50
 
-    data = seir_from_deterministic_model(N, S, E, I, ALPHA, BETA, GAMMA, TIME)
+    data = np.load('../../data/data_200_sims.npz')
+    file_names = data.files
+    val_sim_names = file_names[100:150]
+    val_sims = []
+    for file_name in val_sim_names:
+        seir_info = data[file_name]
+        noised = seir_info
+        val_sims.append(noised)
 
-    res = minimize_mse(sim_data[:20], TOLERANCE)
+    mses = []
+    total_mse = 0
+    mse_count = 0
+    simnum = 1
 
-    sim_data_est = seir_from_deterministic_model(N, S, E, I, res.x[0], res.x[1], res.x[2], TIME)
+    for seir_data in val_sims:
+        print('sim num:', simnum)
+        simnum += 1
+        n = sum(seir_data[0])
+        seir_data = seir_data / n
+        sim_length = len(seir_data)
 
-    plt.plot(sim_data)
-    plt.plot(sim_data_est)
-    plt.show()
+        for t in range(0, sim_length - INPUT_LENGTH - LENGTH_OF_FORECAST, STRIDE):
+            initial_data = seir_data[t:t + INPUT_LENGTH]
+            estimated_params = minimize_mse(initial_data, TOLERANCE).x
+            alpha = estimated_params[0]
+            beta = estimated_params[1]
+            gamma = estimated_params[2]
+            n = sum(initial_data[-1])
+            s = initial_data[-1][0]
+            e = initial_data[-1][1]
+            i = initial_data[-1][2]
+            time = LENGTH_OF_FORECAST
 
-    print(res.x)
+            predicted_data = seir_from_deterministic_model(n, s, e, i, alpha, beta, gamma, time)[1:]
+            actual_data = seir_data[t + INPUT_LENGTH:t + INPUT_LENGTH + LENGTH_OF_FORECAST]
+            total_mse += mse(predicted_data, actual_data)
+            mses.append(mse(predicted_data, actual_data))
+            mse_count += 1
+            print('av mse so far', str(total_mse / mse_count))
+
+    print('average overall mse: ', str(total_mse / mse_count))
+    mses = np.asarray(mses)
+    print('mean: ', str(mses.mean()))
+    print('std: ', str(mses.std()))
+    print(mses)
 
