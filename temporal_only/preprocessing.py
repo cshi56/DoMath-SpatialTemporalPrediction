@@ -12,9 +12,10 @@ def zero_one_normalize(sim_data):
 def make_data(simulation_list, prior_steps, future_steps=1, stride=1):
     ret = []
     for simulation in simulation_list:
-        if len(simulation) < prior_steps + future_steps:
+        start = np.random.randint(0, stride)
+        if len(simulation) < prior_steps + future_steps + start:
             continue
-        for i in range(0, len(simulation) - prior_steps - future_steps + 1, stride):
+        for i in range(start, len(simulation) - prior_steps - future_steps + 1, stride):
             datum = simulation[i: i + prior_steps + future_steps]
             ret.append(datum)
     return ret

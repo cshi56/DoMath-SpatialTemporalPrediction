@@ -4,8 +4,8 @@ import math
 import matplotlib.pyplot as plt
 from time import process_time
 
-random.seed(1234)
-np.random.seed(1234)
+random.seed(123)
+np.random.seed(123)
 np.set_printoptions(threshold=np.inf)
 
 
@@ -104,10 +104,8 @@ class Simulation:
         """
         Simulates SEIR model given specified number of times steps.
         """
-        while self.time_steps[-1] < total_time:
+        while len(self.unit_time_data) < total_time:
             self.time_step()
-
-        self.unit_time_data.append([self.s, self.e, self.i, self.r])
 
     def simulate_till_end(self):
         """
@@ -156,14 +154,41 @@ def graph_beta(a, gamma, n, s, i):
 
 if __name__ == '__main__':
     "setting variables"
-    beta = .4  # number of contacts per person per time step
-    a = .1  # parameter controlling latency between exposure and infection
-    gamma = .05  # parameter specifying probability of removal
+    beta = .3  # number of contacts per person per time step
+    a = .12  # parameter controlling latency between exposure and infection
+    gamma = .024  # parameter specifying probability of removal
     n = 500000  # total population
     i = 100  # initial number of infected subjects
     s = n - i  # susceptible subjects
 
-    sim = Simulation(beta, a, gamma, n, s=s, i=i)
-    sim.simulate_till_end()
-    sim.graph()
-    print(np.asarray(sim.unit_time_data))
+    print('HEY')
+
+    for i in range(1):
+        beta = random.uniform(0.1, 0.4)
+        a = random.uniform(0.07, 0.14)
+        gamma = random.uniform(0.02, 0.07)
+
+        n = 500000  # total population
+        inf = 100  # initial number of infected subjects
+        s = n - inf  # susceptible subjects
+
+        sim = Simulation(beta, a, gamma, n, s=s, i=inf)
+        sim.simulate(50)
+
+        first_fifty = sim.unit_time_data
+
+        day_fifty = first_fifty[-1]
+        first_fifty = np.asarray(first_fifty)
+
+        all_sims = []
+        file_name = 'data_100_identical_' + str(i + 4)
+        for j in range(100):
+            print(i, j)
+            simul = Simulation(beta, a, gamma, n, s=day_fifty[0], e=day_fifty[1], i=day_fifty[2])
+            simul.simulate(152)
+            next_fifty = np.asarray(simul.unit_time_data[1:151])
+            full_sim = np.append(first_fifty, next_fifty, axis=0)
+            all_sims.append(full_sim)
+
+        all_sims = np.asarray(all_sims)
+        np.save(file_name, all_sims)
