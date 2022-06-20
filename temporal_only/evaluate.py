@@ -2,7 +2,12 @@ import numpy as np
 from tensorflow import keras
 from collections import OrderedDict
 import contextlib
-import matplotlib.pyplot as plt
+
+
+def reshape_by_output(vector):
+    if len(vector) == 4:
+        return vector
+    return np.reshape(vector, (int(len(vector) / 4), 4))
 
 
 def mean_squared_error(a, b):
@@ -12,57 +17,81 @@ def mean_squared_error(a, b):
     return sum(diff ** 2) / len(diff)
 
 
-def evaluate_single_simulation(sim, nn_model, input_length, lst_of_lengths):
-    mses = np.empty((len(lst_of_lengths)))
-
+def predict_future(sim, nn_model, input_length, length):
     sim = np.asarray(sim)
     n = sum(sim[0])
     normalized_sim = sim / n
-
-    max_forecast_length = max(lst_of_lengths)
 
     future_data = np.empty((0, 4))
 
     current_data = normalized_sim[:input_length]
     current_data = np.expand_dims(current_data, 0)
 
-    for step in range(max_forecast_length):
+    while len(future_data) < length:
         next_data = np.asarray(nn_model.predict_step(current_data))[0]
-        current_data = current_data[:, 1:]
-        current_data = np.append(current_data, [[next_data]], axis=1)
-        future_data = np.append(future_data, [next_data], axis=0)
+        next_data = reshape_by_output(next_data)
 
-    for index in range(len(lst_of_lengths)):
-        forecast_length = lst_of_lengths[index]
-        forecast_index = forecast_length - 1
-        prediction = future_data[forecast_index]
-        actual_data = normalized_sim[input_length + forecast_index]
-        mse = mean_squared_error(prediction, actual_data)
-        mses[index] = mse
+        future_steps = int(len(next_data.reshape(-1)) / 4)
 
-    return mses
+        current_data = current_data[:, future_steps:]
+        current_data = reshape_by_output(np.append(current_data.reshape(-1), next_data.reshape(-1)))
+        current_data = np.expand_dims(current_data, axis=0)
+        future_data = reshape_by_output(np.append(future_data.reshape(-1), next_data.reshape(-1)))
+
+    future_data = future_data * n
+
+    return future_data[:length]
 
 
-def evaluate(val_sims, nn_model, input_length, seq_of_lengths):
+def evaluate_single_simulation(sim, nn_model, input_length, length):
+    sim = np.asarray(sim)
+    n = sum(sim[0])
+    normalized_sim = sim / n
+
+    future_data = np.empty((0, 4))
+
+    current_data = normalized_sim[:input_length]
+    current_data = np.expand_dims(current_data, 0)
+
+    while len(future_data) < length:
+        next_data = np.asarray(nn_model.predict_step(current_data))[0]
+        next_data = reshape_by_output(next_data)
+
+        future_steps = int(len(next_data.reshape(-1)) / 4)
+
+        current_data = current_data[:, future_steps:]
+        current_data = reshape_by_output(np.append(current_data.reshape(-1), next_data.reshape(-1)))
+        current_data = np.expand_dims(current_data, axis=0)
+        future_data = reshape_by_output(np.append(future_data.reshape(-1), next_data.reshape(-1)))
+
+    forecast_index = length - 1
+    predicted_i = future_data[forecast_index][2]
+    actual_i = normalized_sim[input_length + forecast_index][2]
+
+    return actual_i, predicted_i
+
+
+def evaluate(val_sims, nn_model, input_length, length):
     ret = OrderedDict()
-    mses = np.empty((0, len(seq_of_lengths)))
+    actual_predicted_is = np.empty((0, 2))
     for sim in val_sims:
-        mses_to_add = evaluate_single_simulation(sim, nn_model, input_length, seq_of_lengths)
-        mses = np.append(mses, [mses_to_add], axis=0)
+        actual_i, predicted_i = evaluate_single_simulation(sim, nn_model, input_length, length)
+        actual_predicted_is = np.append(actual_predicted_is, [[actual_i, predicted_i]], axis=0)
 
-    average_mses = np.mean(mses, axis=0)
-    stds = np.std(mses, axis=0)
+    aes = np.abs(actual_predicted_is[:, 0] - actual_predicted_is[:, 1])
+    actual_is = actual_predicted_is[:, 0]
+    wae = np.sum(aes) / np.sum(actual_is)
+    wape = wae * 100
 
     nn_model.summary()
     ret['Number of validation simulations'] = len(val_sims)
     ret['Length of inputs'] = input_length
-    ret['Evaluation distances'] = seq_of_lengths
-    ret['Average mean squared error for each distance'] = average_mses
-    ret['Standard deviation of mean squared error'] = stds
+    ret['Evaluation distance'] = length
+    ret['Weighted absolute percentage error of I at future time step ' + str(length)] = "{:.2f}".format(wape) + '%'
 
     [print(key, ':', value) for key, value in ret.items()]
-    print('MSE values :')
-    print(mses)
+    print('Actual and predicted values of I at future time step :')
+    print(actual_predicted_is)
     print('\n')
 
 
@@ -73,9 +102,7 @@ if __name__ == '__main__':
     TEST_NUM = 50
     EVALUATION_DIST = 50
 
-    MODEL_PATH = 'models/m6'
     PRIOR_STEPS = 50
-    FUTURE_STEPS = 1
 
     all_sims = np.load(FILE_PATH)
     val_file_names = all_sims.files[TRAIN_NUM:TRAIN_NUM + VAL_NUM]
@@ -87,9 +114,10 @@ if __name__ == '__main__':
     for file_name in val_file_names:
         validation_sims.append(all_sims[file_name])
 
-    model = keras.models.load_model(MODEL_PATH)
-
-    file_path = 'evaluations.txt'
+    file_path = 'evaluations2.txt'
     with open(file_path, "a") as f:
         with contextlib.redirect_stdout(f):
-            evaluate(validation_sims, model, PRIOR_STEPS, [1, 5, 20, 50])
+            for i in range(13, 14):
+                model_path = 'models/m' + str(i)
+                model = keras.models.load_model(model_path, compile=False)
+                evaluate(validation_sims, model, PRIOR_STEPS, EVALUATION_DIST)
