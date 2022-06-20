@@ -76,40 +76,34 @@ if __name__ == '__main__':
         noised = seir_info
         val_sims.append(noised)
 
-    mses = []
-    total_mse = 0
-    mse_count = 0
+    actual_predicted_is = np.empty((0, 2))
+
     simnum = 1
 
     for seir_data in val_sims:
         print('sim num:', simnum)
+        seir_data = seir_data[:100]
         simnum += 1
         n = sum(seir_data[0])
         seir_data = seir_data / n
-        sim_length = len(seir_data)
 
-        for t in range(0, sim_length - INPUT_LENGTH - LENGTH_OF_FORECAST, STRIDE):
-            initial_data = seir_data[t:t + INPUT_LENGTH]
-            estimated_params = minimize_mse(initial_data, TOLERANCE).x
-            alpha = estimated_params[0]
-            beta = estimated_params[1]
-            gamma = estimated_params[2]
-            n = sum(initial_data[-1])
-            s = initial_data[-1][0]
-            e = initial_data[-1][1]
-            i = initial_data[-1][2]
-            time = LENGTH_OF_FORECAST
+        first_50 = seir_data[:50]
 
-            predicted_data = seir_from_deterministic_model(n, s, e, i, alpha, beta, gamma, time)[1:]
-            actual_data = seir_data[t + INPUT_LENGTH:t + INPUT_LENGTH + LENGTH_OF_FORECAST]
-            total_mse += mse(predicted_data, actual_data)
-            mses.append(mse(predicted_data, actual_data))
-            mse_count += 1
-            print('av mse so far', str(total_mse / mse_count))
+        [alpha, beta, gamma] = minimize_mse(first_50, 10E-100).x
+        s = first_50[-1][0]
+        e = first_50[-1][1]
+        i = first_50[-1][2]
 
-    print('average overall mse: ', str(total_mse / mse_count))
-    mses = np.asarray(mses)
-    print('mean: ', str(mses.mean()))
-    print('std: ', str(mses.std()))
-    print(mses)
+        predicted_data = seir_from_deterministic_model(1, s, e, i, alpha, beta, gamma, 55)[1:51]
+        pred_i = predicted_data[-1][2]
+        actual_i = seir_data[-1][2]
+        actual_predicted_is = np.append(actual_predicted_is, [[actual_i, pred_i]], axis=0)
+
+    aes = np.abs(actual_predicted_is[:, 0] - actual_predicted_is[:, 1])
+    actuals_sum = actual_predicted_is[:, 0]
+    wape = np.sum(aes) / np.sum(actuals_sum)
+    wape = wape * 100
+
+    print('WAPE: ', str(wape))
+    print(actual_predicted_is)
 
