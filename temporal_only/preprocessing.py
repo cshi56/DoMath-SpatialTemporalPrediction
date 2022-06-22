@@ -71,5 +71,5 @@ def noisify(data, noise_amount):
 
 if __name__ == '__main__':
     x_training, y_training, x_valid, y_valid, x_testing, y_testing = \
-        preprocess('../../data/data_200_sims.npz', 100, 50, 30, 50, 1, 1)
-    print(y_training[0])
+        preprocess('data.npz', 50, 20, 30, 50, 1, 1)
+
