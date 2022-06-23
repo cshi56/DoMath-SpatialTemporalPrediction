@@ -42,6 +42,12 @@ class Node:
         self.next_unit_time_step = 1
         self.unit_time_history = [[0, self.s, self.e, self.i, self.r]]
 
+    def __iter__(self):
+        yield from self.unit_time_history
+
+    def __getitem__(self, i):
+        return self.unit_time_history[i]
+
     def update_coefficients(self):
         self.s_to_e_coefficient = self.beta * self.i * self.s / self.n
         self.e_to_i_coefficient = self.alpha * self.e
@@ -120,6 +126,9 @@ class Simulation:
         self.diffusion_matrix = np.empty((0, 0))
         self.current_time_step = 1
 
+    def __len__(self):
+        return len(self.nodes[0].unit_time_history)
+
     def add_node(self, node):
         self.nodes.append(node)
         self.number_of_nodes += 1
@@ -135,7 +144,7 @@ class Simulation:
                 minimal_n = min(self.nodes[node_index].n, self.nodes[index].n)
                 if index == node_index:
                     continue
-                diffusion_number = int(1 * random.uniform(0, 1) * minimal_n /
+                diffusion_number = int(0.2 * random.uniform(0.8, 1) * minimal_n /
                                        (self.number_of_nodes * 4 ** (abs(node_index - index))))
                 self.diffusion_matrix[node_index][index] = diffusion_number
                 self.diffusion_matrix[index][node_index] = diffusion_number
@@ -186,7 +195,7 @@ class Simulation:
             self.nodes[node_index].r += accumulated_seir_dic[node_index][3]
 
     def simulate_single_time_unit(self):
-        print('Simulating time step ' + str(self.current_time_step) + '.')
+        #  print('Simulating time step ' + str(self.current_time_step) + '.')
         for node in self.nodes:
             node.simulate_single_time_unit()
         self.diffuse()

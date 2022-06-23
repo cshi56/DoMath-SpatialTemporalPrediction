@@ -50,7 +50,7 @@ def train_conv_rnn(model,
         total_loss = 0
         seq_length = len(training_data[0][0])
 
-        print('Epoch ' + str(epoch + 1) + '/' + str(EPOCHS) + ': ', end='')
+        print('Epoch ' + str(epoch + 1) + '/' + str(epochs) + ': ', end='')
         total_equals = 0
 
         for i, (x, y) in enumerate(training_data):
