@@ -144,7 +144,7 @@ class Simulation:
                 minimal_n = min(self.nodes[node_index].n, self.nodes[index].n)
                 if index == node_index:
                     continue
-                diffusion_number = int(0.2 * random.uniform(0.8, 1) * minimal_n /
+                diffusion_number = int(1 * random.uniform(0.8, 1) * minimal_n /
                                        (self.number_of_nodes * 4 ** (abs(node_index - index))))
                 self.diffusion_matrix[node_index][index] = diffusion_number
                 self.diffusion_matrix[index][node_index] = diffusion_number
