@@ -93,32 +93,3 @@ class RNNVectorized(AbstractRNN):
             future_data.append(output)
             current_input = current_input[1:]
             current_input = None
-
-
-if __name__ == '__main__':
-    DATA_FILE = 'data/200sims_50days_2nodes.npy'
-    PREVIOUS_STEPS = 20
-    FUTURE_STEPS = 1
-    STRIDE = 4
-
-    HIDDEN_SIZE = 128
-    TRAIN_NUM = 100
-    VAL_NUM = 50
-    EPOCHS = 200
-    INITIAL_LR = 0.001
-    LR_DECAY = 0.95
-
-    model = RNNVectorized(2, 4, PREVIOUS_STEPS, FUTURE_STEPS, HIDDEN_SIZE)
-
-    model.train_model(DATA_FILE,
-                      TRAIN_NUM,
-                      VAL_NUM,
-                      STRIDE,
-                      EPOCHS,
-                      optim=torch.optim.Adam,
-                      lr=INITIAL_LR,
-                      lr_decay=LR_DECAY)
-
-
-
-    model.plot_loss(20)
