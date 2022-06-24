@@ -59,13 +59,13 @@ def simulate(steps, nodes, file):
 
 def make_data(data, prior_steps, future_steps=1, stride=1):
     holder = []
-    print(data[0].shape)
+    #print(data[0].shape)
     pop = 0
     for n in range(data[0].shape[0]):
         pop += np.sum(data[0][n, 0, :])
-    print(pop)
+
     for d in data:
-        print(d.shape)
+        #print(d.shape)
         for i in range(d.shape[1]):
             holder.append(d[:, i, 1:])
     holder = np.asarray(holder)
@@ -86,7 +86,7 @@ def make_data(data, prior_steps, future_steps=1, stride=1):
     my_y = my_y / pop
     return my_x, my_y
 
-def preprocess_as_temporal(file, prior_steps, future_steps=1, stride=1):
+def preprocess_as_temporal(file, steps, prior_steps, future_steps=1, stride=1):
     all_data = []
     temp = np.load(file)
     file_names = temp.files
@@ -108,17 +108,18 @@ def preprocess_as_temporal(file, prior_steps, future_steps=1, stride=1):
     tensor_x = torch.from_numpy(my_x)  # transform to torch tensor
     tensor_y = torch.from_numpy(my_y)
 
+    split = round(0.6 * steps)
 
-    train_x = tensor_x[:241]
-    test_x = tensor_x[241:]
+    train_x = tensor_x[:split]
+    test_x = tensor_x[split:]
 
-    train_y = tensor_y[:241]
-    test_y = tensor_y[241:]
+    train_y = tensor_y[:split]
+    test_y = tensor_y[split:]
 
     train_set = TensorDataset(train_x, train_y)  # create your dataset
     test_set = TensorDataset(test_x, test_y)
 
-    train_loader = DataLoader(train_set, batch_size=20, shuffle=True)  # create your dataloader
+    train_loader = DataLoader(train_set, shuffle=True)  # create your dataloader
     test_loader = DataLoader(test_set)
 
     return train_loader, test_loader
@@ -126,8 +127,8 @@ def preprocess_as_temporal(file, prior_steps, future_steps=1, stride=1):
 
 if __name__ == '__main__':
     file_name = 'data.npz'
-    NODES = 10
-    STEPS = 500
+    NODES = 2
+    STEPS = 200
     PREVIOUS_STEPS = 20
     future_steps = 1
     stride = 1
@@ -146,7 +147,7 @@ if __name__ == '__main__':
     plt.legend()
     plt.show()
 """
-    train_loader, test_loader = preprocess_as_temporal(file_name, PREVIOUS_STEPS, future_steps=future_steps, stride=stride)
+    train_loader, test_loader = preprocess_as_temporal(file_name, steps=STEPS, prior_steps=PREVIOUS_STEPS, future_steps=future_steps, stride=stride)
 
     for batch, (x, y) in enumerate(train_loader):
         t = x
