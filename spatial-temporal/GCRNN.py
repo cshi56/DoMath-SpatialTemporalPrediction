@@ -60,7 +60,6 @@ class GCRNN(AbstractRNN):
             second_vec.append(first_vec[i] + ((-1) ** i))
         e_i = np.asarray([first_vec, second_vec])
         self.edge_index = torch.tensor(e_i, dtype=torch.long)
-        print(self.edge_index)
 
     def create_dataset_from_sim(self, sim, stride):
         sim_length = len(sim[0])
@@ -119,14 +118,4 @@ class GCRNN(AbstractRNN):
         return torch.zeros(self.num_nodes, self.hidden_size)
 
     def predict(self, sim, time_steps):
-        future_data = []
-        current_input = x
-        print(x)
-        for step in range(time_steps):
-            output = None
-            hidden_state = self.initial_hidden()
-            for vector in current_input:
-                output, hidden_state = self.forward(vector, hidden_state)
-            future_data.append(output)
-            current_input = current_input[1:]
-            current_input = None
+        pass

@@ -82,14 +82,4 @@ class RNNVectorized(AbstractRNN):
         return torch.zeros(self.hidden_size)
 
     def predict(self, sim, time_steps):
-        future_data = []
-        current_input = x
-        print(x)
-        for step in range(time_steps):
-            output = None
-            hidden_state = self.initial_hidden()
-            for vector in current_input:
-                output, hidden_state = self.forward(vector, hidden_state)
-            future_data.append(output)
-            current_input = current_input[1:]
-            current_input = None
+        pass
