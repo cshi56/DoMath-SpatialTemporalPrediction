@@ -1,0 +1,13 @@
+1 node, 64 hidden units:
+
+vectorized rnn:
+Total number of trainable parameters: 4676
+Epoch 50/50: ======================================== Done. Training loss: 2.287e-06. Validation loss: 1.686e-06.
+
+vectorized lstm:
+Total number of trainable parameters: 17924
+Epoch 50/50: ======================================== Done. Training loss: 1.066e-06. Validation loss: 1.331e-06.
+
+graph convolution - rnn:
+Total number of trainable parameters: 4740
+Epoch 50/50: ======================================== Done. Training loss: 2.587e-06. Validation loss: 1.897e-06.
