@@ -1,42 +1,62 @@
 
-
 import numpy as np
 import matplotlib.pyplot as plt
 import torch
 from RNNVectorized import RNNVectorized, normalize_sim, vectorize
 from LSTMVectorized import LSTMVectorized
 
+
+def rnn_predict_one_step(model, input_steps):
+    hidden_state = model.initial_hidden()
+    for vector in input_steps:
+        output, hidden_state = model(vector, hidden_state)
+    return output
+
 def rnn_predict(model, sim, prev_steps, time_steps, num_nodes):
     sim = normalize_sim(sim)
     sim = vectorize(sim)
     sim = torch.tensor(sim, dtype=torch.float)
     input_steps = sim[:prev_steps]
-    hidden_state = model.initial_hidden()
-    for vector in input_steps:
-        output, hidden_state = model(vector, hidden_state)
-    future_steps = torch.zeros([time_steps, 4 * num_nodes])
-    future_steps[0, :] = output
-    for step in range((time_steps-1)):
-        output, hidden_state = model(output, hidden_state)
-        future_steps[step+1, :] = output
-    return future_steps.detach().numpy(), sim[prev_steps:].numpy()
+    output = rnn_predict_one_step(model, input_steps)
+    future_steps = torch.zeros([prev_steps + time_steps, 4 * num_nodes])
+    future_steps[:prev_steps, :] = input_steps
+    future_steps[prev_steps, :] = output
 
+    for step in range((time_steps - 1)):
+        input_steps = future_steps[(step+1):(step+1+prev_steps), :]
+        output = rnn_predict_one_step(model, input_steps)
+        future_steps[prev_steps+step+1, :] = output
+
+    pred = future_steps[prev_steps:]
+    return pred.detach().numpy(), sim[prev_steps:].numpy()
+
+def lstm_predict_one_step(model, input_steps):
+    hidden_state = model.initial_hidden()
+    cell_state = model.initial_cell()
+    for vector in input_steps:
+        output, hidden_state, cell_state = model(vector, hidden_state, cell_state)
+    return output
 
 def lstm_predict(model, sim, prev_steps, time_steps, num_nodes):
     sim = normalize_sim(sim)
     sim = vectorize(sim)
     sim = torch.tensor(sim, dtype=torch.float)
     input_steps = sim[:prev_steps]
-    hidden_state = model.initial_hidden()
-    cell_state = model.initial_cell()
-    for vector in input_steps:
-        output, hidden_state, cell_state = model(vector, hidden_state, cell_state)
-    future_steps = torch.zeros([time_steps, 4 * num_nodes])
-    future_steps[0, :] = output
-    for step in range((time_steps-1)):
-        output, hidden_state, cell_state = model(output, hidden_state, cell_state)
-        future_steps[step+1, :] = output
-    return future_steps.detach().numpy(), sim[prev_steps:].numpy()
+    output = lstm_predict_one_step(model, input_steps)
+    future_steps = torch.zeros([prev_steps + time_steps, 4 * num_nodes])
+    future_steps[:prev_steps, :] = input_steps
+    future_steps[prev_steps, :] = output
+
+    for step in range((time_steps - 1)):
+        input_steps = future_steps[(step+1):(step+1+prev_steps), :]
+        print("lstm input steps")
+        print(input_steps)
+        output = lstm_predict_one_step(model, input_steps)
+        print("lstm output")
+        print(output)
+        future_steps[prev_steps+step+1, :] = output
+    pred = future_steps[prev_steps:]
+    return pred.detach().numpy(), sim[prev_steps:].numpy()
 
 def average_testing_loss(predictions, true_labels, nodes):
 
@@ -74,7 +94,7 @@ if __name__ == '__main__':
     for dex, nodes in enumerate(nodes_list):
         datapath = '../data/200sims_50days_2nodes.npy' #datapath_list[dex]
         simulations = np.load(datapath)
-        simulations = simulations[151:152]
+        simulations = simulations[155:156]
 
         rnn_path = '../models/' + str(nodes) + '_nodes/rnn_vectorized_20prev_1fut.pt'
         lstm_path = '../models/' + str(nodes) + '_nodes/lstm_vectorized_20prev_1fut.pt'
@@ -90,6 +110,15 @@ if __name__ == '__main__':
         for sim in simulations:
             rnn_pred, rnn_true = rnn_predict(rnn_model, sim, PREVIOUS_STEPS, TIME_STEPS, nodes)
             lstm_pred, lstm_true = lstm_predict(lstm_model, sim, PREVIOUS_STEPS, TIME_STEPS, nodes)
+
+            fig, (ax1, ax2) = plt.subplots(1, 2)
+            ax1.plot(rnn_pred[:, 1], label="rnn pred")
+            ax1.plot(rnn_true[:, 1], label="rnn true")
+            ax2.plot(lstm_pred[:, 1], label="lstm pred")
+            ax2.plot(lstm_true[:, 1], label="lstm true")
+            ax1.legend()
+            ax2.legend()
+            plt.show()
 
             fig, (ax1, ax2) = plt.subplots(1, 2)
             ax1.plot(rnn_pred[:, 5], label="rnn pred")
