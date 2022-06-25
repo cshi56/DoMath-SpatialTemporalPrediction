@@ -49,11 +49,11 @@ def lstm_predict(model, sim, prev_steps, time_steps, num_nodes):
 
     for step in range((time_steps - 1)):
         input_steps = future_steps[(step+1):(step+1+prev_steps), :]
-        print("lstm input steps")
-        print(input_steps)
+        #print("lstm input steps")
+        #print(input_steps)
         output = lstm_predict_one_step(model, input_steps)
-        print("lstm output")
-        print(output)
+        #print("lstm output")
+        #print(output)
         future_steps[prev_steps+step+1, :] = output
     pred = future_steps[prev_steps:]
     return pred.detach().numpy(), sim[prev_steps:].numpy()
@@ -63,13 +63,14 @@ def average_testing_loss(predictions, true_labels, nodes):
     predictions = predictions * 50000
     true_labels = true_labels * 50000
     percentage_error = 0
-    print(predictions)
-    print(true_labels)
+    #print(predictions)
+    #print(true_labels)
 
     for idx in range(predictions.shape[0]):
         for node in range(nodes):
-            print(node)
+            #print(node)
             percentage_error += (np.abs(predictions[idx, node * 4 + 1] - true_labels[idx, node * 4 + 1]) / true_labels[idx, node * 4 + 1]) * 100
+        percentage_error = percentage_error / nodes
 
     return percentage_error / predictions.shape[0]
 
@@ -85,16 +86,15 @@ if __name__ == '__main__':
     RNN_LOSS = []
     LSTM_LOSS = []
 
-    nodes_list = [2]
+    nodes_list = [1]
     datapath_list = ['../data/200sims_50days_1nodes.npy',
                      '../data/200sims_50days_2nodes.npy',
                      '../data/200sims_50days_10nodes.npy',
                      '../data/200sims_50days_20nodes.npy']
 
     for dex, nodes in enumerate(nodes_list):
-        datapath = '../data/200sims_50days_2nodes.npy' #datapath_list[dex]
+        datapath = '../data/testing-sims/50sims_50days_1nodes.npy' #datapath_list[dex]
         simulations = np.load(datapath)
-        simulations = simulations[155:156]
 
         rnn_path = '../models/' + str(nodes) + '_nodes/rnn_vectorized_20prev_1fut.pt'
         lstm_path = '../models/' + str(nodes) + '_nodes/lstm_vectorized_20prev_1fut.pt'
@@ -111,15 +111,93 @@ if __name__ == '__main__':
             rnn_pred, rnn_true = rnn_predict(rnn_model, sim, PREVIOUS_STEPS, TIME_STEPS, nodes)
             lstm_pred, lstm_true = lstm_predict(lstm_model, sim, PREVIOUS_STEPS, TIME_STEPS, nodes)
 
-            fig, (ax1, ax2) = plt.subplots(1, 2)
-            ax1.plot(rnn_pred[:, 1], label="rnn pred")
-            ax1.plot(rnn_true[:, 1], label="rnn true")
-            ax2.plot(lstm_pred[:, 1], label="lstm pred")
-            ax2.plot(lstm_true[:, 1], label="lstm true")
+            """
+            fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
+            ax1.plot(rnn_pred[:, 1], label="rnn pred node 1")
+            ax1.plot(rnn_true[:, 1], label="rnn true node 1")
+            ax2.plot(lstm_pred[:, 1], label="lstm pred node 1")
+            ax2.plot(lstm_true[:, 1], label="lstm true node 1")
+            ax3.plot(rnn_pred[:, 5], label="rnn pred node 2")
+            ax3.plot(rnn_true[:, 5], label="rnn true node 2")
+            ax4.plot(lstm_pred[:, 5], label="lstm pred node 2")
+            ax4.plot(lstm_true[:, 5], label="lstm true node 2")
             ax1.legend()
             ax2.legend()
+            ax3.legend()
+            ax4.legend()
+            fig.suptitle("Ten nodes Example")
             plt.show()
 
+            fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
+            ax1.plot(rnn_pred[:, 9], label="rnn pred node 3")
+            ax1.plot(rnn_true[:, 9], label="rnn true node 3")
+            ax2.plot(lstm_pred[:, 9], label="lstm pred node 3")
+            ax2.plot(lstm_true[:, 9], label="lstm true node 3")
+            ax3.plot(rnn_pred[:, 13], label="rnn pred node 4")
+            ax3.plot(rnn_true[:, 13], label="rnn true node 4")
+            ax4.plot(lstm_pred[:, 13], label="lstm pred node 4")
+            ax4.plot(lstm_true[:, 13], label="lstm true node 4")
+            ax1.legend()
+            ax2.legend()
+            ax3.legend()
+            ax4.legend()
+            fig.suptitle("Ten nodes Example")
+            plt.show()
+
+            fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
+            ax1.plot(rnn_pred[:, 17], label="rnn pred node 5")
+            ax1.plot(rnn_true[:, 17], label="rnn true node 5")
+            ax2.plot(lstm_pred[:, 17], label="lstm pred node 5")
+            ax2.plot(lstm_true[:, 17], label="lstm true node 5")
+            ax3.plot(rnn_pred[:, 21], label="rnn pred node 6")
+            ax3.plot(rnn_true[:, 21], label="rnn true node 6")
+            ax4.plot(lstm_pred[:, 21], label="lstm pred node 6")
+            ax4.plot(lstm_true[:, 21], label="lstm true node 6")
+            ax1.legend()
+            ax2.legend()
+            ax3.legend()
+            ax4.legend()
+            fig.suptitle("Ten nodes Example")
+            plt.show()
+
+
+            fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
+            ax1.plot(rnn_pred[:, 25], label="rnn pred node 7")
+            ax1.plot(rnn_true[:, 25], label="rnn true node 7")
+            ax2.plot(lstm_pred[:, 25], label="lstm pred node 7")
+            ax2.plot(lstm_true[:, 25], label="lstm true node 7")
+            ax3.plot(rnn_pred[:, 29], label="rnn pred node 8")
+            ax3.plot(rnn_true[:, 29], label="rnn true node 8")
+            ax4.plot(lstm_pred[:, 29], label="lstm pred node 8")
+            ax4.plot(lstm_true[:, 29], label="lstm true node 8")
+            ax1.legend()
+            ax2.legend()
+            ax3.legend()
+            ax4.legend()
+            fig.suptitle("Ten nodes Example")
+            plt.show()
+
+            fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
+            ax1.plot(rnn_pred[:, 33], label="rnn pred node 9")
+            ax1.plot(rnn_true[:, 33], label="rnn true node 9")
+            ax2.plot(lstm_pred[:, 33], label="lstm pred node 9")
+            ax2.plot(lstm_true[:, 33], label="lstm true node 9")
+            ax3.plot(rnn_pred[:, 37], label="rnn pred node 10")
+            ax3.plot(rnn_true[:, 37], label="rnn true node 10")
+            ax4.plot(lstm_pred[:, 37], label="lstm pred node 10")
+            ax4.plot(lstm_true[:, 37], label="lstm true node 10")
+            ax1.legend()
+            ax2.legend()
+            ax3.legend()
+            ax4.legend()
+            fig.suptitle("Ten nodes Example")
+            plt.show()
+            """
+
+
+
+
+            """
             fig, (ax1, ax2) = plt.subplots(1, 2)
             ax1.plot(rnn_pred[:, 5], label="rnn pred")
             ax1.plot(rnn_true[:, 5], label="rnn true")
@@ -128,13 +206,16 @@ if __name__ == '__main__':
             ax1.legend()
             ax2.legend()
             plt.show()
-
-
+            """
             RNN_LOSS.append(average_testing_loss(rnn_pred, rnn_true, nodes))
             LSTM_LOSS.append(average_testing_loss(lstm_pred, lstm_true, nodes))
 
     print(RNN_LOSS)
     print(LSTM_LOSS)
+    print("RNN MEAN", "RNN STD")
+    print(np.mean(np.asarray(RNN_LOSS)), np.std(np.asarray(RNN_LOSS)))
+    print("LSTM MEAN", "LSTM STD")
+    print(np.mean(np.asarray(LSTM_LOSS)), np.std(np.asarray(LSTM_LOSS)))
 
 
 
