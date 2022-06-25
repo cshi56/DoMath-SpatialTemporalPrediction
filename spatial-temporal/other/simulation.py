@@ -149,7 +149,7 @@ class Simulation:
 
             s_transfer_in = int(total_diff_number * node.s / node.n)
             e_transfer_in = int(total_diff_number * node.e / node.n)
-            i_transfer_in = int(total_diff_number * node.i / node.n)
+            i_transfer_in = int(total_diff_number * node.j / node.n)
             r_transfer_in = total_diff_number - s_transfer_in - e_transfer_in - i_transfer_in
 
             accumulated_seir[0] += s_transfer_in
@@ -182,7 +182,7 @@ class Simulation:
         for node_index in range(self.number_of_nodes):
             self.nodes[node_index].s += accumulated_seir_dic[node_index][0]
             self.nodes[node_index].e += accumulated_seir_dic[node_index][1]
-            self.nodes[node_index].i += accumulated_seir_dic[node_index][2]
+            self.nodes[node_index].j += accumulated_seir_dic[node_index][2]
             self.nodes[node_index].r += accumulated_seir_dic[node_index][3]
 
     def simulate_single_time_unit(self):
