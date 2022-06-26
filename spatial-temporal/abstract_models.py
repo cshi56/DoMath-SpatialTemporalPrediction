@@ -59,7 +59,7 @@ class AbstractRNN(nn.Module):
                     lr=0.001,
                     lr_decay=1.0,
                     batch_size=1):
-
+        pop = sum(np.load(data_file)[0][0][0])
         training_data, validation_data = self.create_datasets(data_file,
                                                               stride,
                                                               train_num,
@@ -103,11 +103,13 @@ class AbstractRNN(nn.Module):
                     print('=', end='')
             with torch.no_grad():
                 train_loss = self.calculate_loss(training_data, loss_func)
+                train_loss = np.sqrt(train_loss) * pop
             print(' Done. ', end='')
-            print('Training loss: ' + '{:.3e}'.format(train_loss) + '. ', end='')
+            print('Training error: ' + '{:.2f}'.format(train_loss) + '. ', end='')
             with torch.no_grad():
                 val_loss = self.calculate_loss(validation_data, loss_func)
-            print('Validation loss: ' + '{:.3e}'.format(val_loss) + '. ', end='')
+                val_loss = np.sqrt(val_loss) * pop
+            print('Validation error: ' + '{:.2f}'.format(val_loss) + '. ', end='')
             print('Learning Rate: ' + '{:.3e}'.format(learning_rate) + '. ', end='')
             self.history['epochs'].append(epoch + 1)
             self.history['training_loss'].append(train_loss)
@@ -189,6 +191,8 @@ class AbstractLSTM(nn.Module):
                     lr_decay=1.0,
                     batch_size=1):
 
+        pop = sum(np.load(data_file)[0][0][0])
+
         training_data, validation_data = self.create_datasets(data_file,
                                                               stride,
                                                               train_num,
@@ -232,11 +236,13 @@ class AbstractLSTM(nn.Module):
                     print('=', end='')
             with torch.no_grad():
                 train_loss = self.calculate_loss(training_data, loss_func)
+                train_loss = np.sqrt(train_loss) * pop
             print(' Done. ', end='')
-            print('Training loss: ' + '{:.3e}'.format(train_loss) + '. ', end='')
+            print('Training error: ' + '{:.2f}'.format(train_loss) + '. ', end='')
             with torch.no_grad():
                 val_loss = self.calculate_loss(validation_data, loss_func)
-            print('Validation loss: ' + '{:.3e}'.format(val_loss) + '. ', end='')
+                val_loss = np.sqrt(val_loss) * pop
+            print('Validation error: ' + '{:.2f}'.format(val_loss) + '. ', end='')
             print('Learning Rate: ' + '{:.3e}'.format(learning_rate) + '. ', end='')
             self.history['epochs'].append(epoch + 1)
             self.history['training_loss'].append(train_loss)
