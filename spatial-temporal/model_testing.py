@@ -5,7 +5,7 @@ from GCRNN import GCRNN
 from GCLSTM import GCLSTM
 
 if __name__ == '__main__':
-    DATA_FILE = 'data/200sims_50days_1nodes.npy'
+    DATA_FILE = 'data/fixed-parameters/150sims_50days_1nodes.npy'
     NODES = 1
     PREVIOUS_STEPS = 20
     FUTURE_STEPS = 1
@@ -14,10 +14,23 @@ if __name__ == '__main__':
     HIDDEN_SIZE = 64
     TRAIN_NUM = 100
     VAL_NUM = 50
-    EPOCHS = 50
+    EPOCHS = 100
     INITIAL_LR = 0.001
     LR_DECAY = 0.9
 
+    model = RNNVectorized(NODES, 4, PREVIOUS_STEPS, FUTURE_STEPS, HIDDEN_SIZE)
+
+    model.train_model(DATA_FILE,
+                      TRAIN_NUM,
+                      VAL_NUM,
+                      STRIDE,
+                      EPOCHS,
+                      lr=INITIAL_LR,
+                      lr_decay=LR_DECAY)
+
+    torch.save(model.state_dict(), 'models/1_nodes/vecrnn.pt')
+
+    """
     nodes_list = [1, 2, 10, 20]
     datapath_list = ['data/200sims_50days_1nodes.npy',
                      'data/200sims_50days_2nodes.npy',
@@ -54,3 +67,4 @@ if __name__ == '__main__':
                               lr_decay=LR_DECAY)
 
             torch.save(model.state_dict(), path)
+    """

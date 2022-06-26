@@ -33,7 +33,7 @@ def generate_100(alpha, beta, gamma, n, s, e, i, num_same_first_days, total_time
     var_sims = np.asarray(var_sims)
     for sim in var_sims:
         this_i = sim[:, 3]
-        plt.plot(range(1, total_time + 1), this_i, c='blue', alpha=min(1, 10 / num_sims))
+        plt.plot(range(1, total_time + 1), this_i, c='blue', alpha=min(1, 10000 / num_sims))
     title = 'α =  ' + '{:.3f}'.format(alpha) + ', '
     title += 'β =  ' + '{:.3f}'.format(beta) + ', '
     title += 'γ =  ' + '{:.3f}'.format(gamma) + ', '
@@ -47,18 +47,14 @@ def generate_100(alpha, beta, gamma, n, s, e, i, num_same_first_days, total_time
 
 if __name__ == '__main__':
     ALPHA = 0.1
-    BETA = 0.3
+    BETA = 0.4
     GAMMA = 0.05
     N = 500000
-    I = 5
-    S = N - I
+    I = 10
     E = 0
-    INITIAL_DAYS = 20
-    TOTAL_TIME = 50
+    S = N - I - E
+    INITIAL_DAYS = 1
+    TOTAL_TIME = 20
     NUM_SIMS = 1000
 
-    for _ in range(10):
-        ALPHA = np.random.uniform(0.07, 0.14)
-        BETA = np.random.uniform(0.1, 0.5)
-        GAMMA = np.random.uniform(0.02, 0.07)
-        ret = generate_100(ALPHA, BETA, GAMMA, N, S, E, I, INITIAL_DAYS, TOTAL_TIME, NUM_SIMS)
+    generate_100(ALPHA, BETA, GAMMA, N, S, E, I, INITIAL_DAYS, TOTAL_TIME, NUM_SIMS)

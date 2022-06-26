@@ -1,5 +1,3 @@
-import random
-
 import numpy as np
 from simulation import Node, Simulation
 import matplotlib.pyplot as plt
@@ -16,26 +14,25 @@ def create_random_node(alpha, gamma, n, i):
 
 
 if __name__ == '__main__':
-    NUM_SIMS = 200
-    N = 50000
-    I_INIT = 5
+    NUM_SIMS = 150
+    N = 500000
+    I_INIT = 10
     E_INIT = 0
     R_INIT = 0
     S_INIT = N - I_INIT - E_INIT - R_INIT
     TIME_STEPS = 50
-    NODES = 20
-    FILE_PATH = 'data/200sims_50days_20nodes'
+    NODES = 1
+    FILE_PATH = 'data/fixed-parameters/150sims_50days_1nodes.npy'
 
     all_data = []
 
     for _ in range(NUM_SIMS):
         print(_)
         sim = Simulation()
-        alpha = np.random.uniform(0.07, 0.14)
-        gamma = np.random.uniform(0.02, 0.07)
-
         for _ in range(NODES):
-            beta = np.random.uniform(0.1, 0.5)
+            alpha = 0.1
+            beta = 0.4
+            gamma = 0.05
             node = Node(alpha, beta, gamma, N, S_INIT, E_INIT, I_INIT)
             sim.add_node(node)
 
@@ -52,8 +49,3 @@ if __name__ == '__main__':
 
     all_data = np.asarray(all_data)
     np.save(FILE_PATH, all_data)
-    for data in all_data[:2]:
-        for node in data:
-            i = node[:, 2]
-            plt.plot(i)
-            plt.show()
