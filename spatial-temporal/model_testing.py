@@ -17,8 +17,9 @@ if __name__ == '__main__':
     EPOCHS = 100
     INITIAL_LR = 0.001
     LR_DECAY = 0.9
+    BATCH_SIZE = 300
 
-    model = GCRNN(NODES, 4, PREVIOUS_STEPS, FUTURE_STEPS, HIDDEN_SIZE)
+    model = GCLSTM(NODES, 4, PREVIOUS_STEPS, FUTURE_STEPS, HIDDEN_SIZE)
 
     model.train_model(DATA_FILE,
                       TRAIN_NUM,
@@ -27,9 +28,10 @@ if __name__ == '__main__':
                       EPOCHS,
                       lr=INITIAL_LR,
                       lr_decay=LR_DECAY,
-                      optim=torch.optim.Adam)
+                      optim=torch.optim.Adam,
+                      batch_size=BATCH_SIZE)
 
-    torch.save(model.state_dict(), 'models/2_nodes/gcrnn.pt')
+    torch.save(model.state_dict(), 'models/10_nodes/na.pt')
 
     model.plot_loss(10)
 

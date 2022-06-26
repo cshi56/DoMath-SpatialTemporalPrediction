@@ -57,7 +57,8 @@ class AbstractRNN(nn.Module):
                     loss_func=nn.MSELoss,
                     optim=torch.optim.Adam,
                     lr=0.001,
-                    lr_decay=1.0):
+                    lr_decay=1.0,
+                    batch_size=1):
 
         training_data, validation_data = self.create_datasets(data_file,
                                                               stride,
@@ -78,18 +79,25 @@ class AbstractRNN(nn.Module):
             print('Epoch ' + str(epoch + 1) + '/' + str(epochs) + ': ', end='')
             total_equals = 0
 
+            loss = torch.tensor(0.0, dtype=torch.float, requires_grad=True)
             for i, (x, y) in enumerate(training_data):
                 equals_to_print = int(40 * (i + 1) / len(training_data)) - total_equals
                 total_equals += equals_to_print
                 output = None
                 hidden_state = self.initial_hidden()
+
                 for vector in x:
                     output, hidden_state = self.forward(vector, hidden_state)
-                loss = loss_func(output, y)
-                opt.zero_grad()
-                loss.backward()
-                nn.utils.clip_grad_norm_(self.parameters(), 1)
-                opt.step()
+
+                loss = loss + loss_func(output, y)
+
+                if i > 0 and i % batch_size == 0:
+                    loss = loss / batch_size
+                    opt.zero_grad()
+                    loss.backward()
+                    opt.step()
+                    loss = torch.tensor(0.0, dtype=torch.float, requires_grad=True)
+
                 losses.append(loss.item())
                 for _ in range(equals_to_print):
                     print('=', end='')
@@ -178,7 +186,8 @@ class AbstractLSTM(nn.Module):
                     loss_func=nn.MSELoss,
                     optim=torch.optim.Adam,
                     lr=0.001,
-                    lr_decay=1.0):
+                    lr_decay=1.0,
+                    batch_size=1):
 
         training_data, validation_data = self.create_datasets(data_file,
                                                               stride,
@@ -199,6 +208,8 @@ class AbstractLSTM(nn.Module):
             print('Epoch ' + str(epoch + 1) + '/' + str(epochs) + ': ', end='')
             total_equals = 0
 
+            loss = torch.tensor(0.0, dtype=torch.float, requires_grad=True)
+
             for i, (x, y) in enumerate(training_data):
                 equals_to_print = int(40 * (i + 1) / len(training_data)) - total_equals
                 total_equals += equals_to_print
@@ -207,11 +218,15 @@ class AbstractLSTM(nn.Module):
                 cell_state = self.initial_cell()
                 for vector in x:
                     output, hidden_state, cell_state = self.forward(vector, hidden_state, cell_state)
-                loss = loss_func(output, y)
-                opt.zero_grad()
-                loss.backward()
-                nn.utils.clip_grad_norm_(self.parameters(), 1)
-                opt.step()
+
+                loss = loss + loss_func(output, y)
+
+                if i > 0 and i % batch_size == 0:
+                    loss = loss / batch_size
+                    opt.zero_grad()
+                    loss.backward()
+                    opt.step()
+                    loss = torch.tensor(0.0, dtype=torch.float, requires_grad=True)
                 losses.append(loss.item())
                 for _ in range(equals_to_print):
                     print('=', end='')
