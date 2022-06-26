@@ -5,8 +5,8 @@ from GCRNN import GCRNN
 from GCLSTM import GCLSTM
 
 if __name__ == '__main__':
-    DATA_FILE = 'data/fixed-parameters/150sims_50days_1nodes.npy'
-    NODES = 1
+    DATA_FILE = 'data/fixed-parameters/150sims_50days_2nodes.npy'
+    NODES = 2
     PREVIOUS_STEPS = 20
     FUTURE_STEPS = 1
     STRIDE = 5
@@ -18,7 +18,7 @@ if __name__ == '__main__':
     INITIAL_LR = 0.001
     LR_DECAY = 0.9
 
-    model = RNNVectorized(NODES, 4, PREVIOUS_STEPS, FUTURE_STEPS, HIDDEN_SIZE)
+    model = GCRNN(NODES, 4, PREVIOUS_STEPS, FUTURE_STEPS, HIDDEN_SIZE)
 
     model.train_model(DATA_FILE,
                       TRAIN_NUM,
@@ -26,9 +26,12 @@ if __name__ == '__main__':
                       STRIDE,
                       EPOCHS,
                       lr=INITIAL_LR,
-                      lr_decay=LR_DECAY)
+                      lr_decay=LR_DECAY,
+                      optim=torch.optim.Adam)
 
-    torch.save(model.state_dict(), 'models/1_nodes/vecrnn.pt')
+    torch.save(model.state_dict(), 'models/2_nodes/gcrnn.pt')
+
+    model.plot_loss(10)
 
     """
     nodes_list = [1, 2, 10, 20]

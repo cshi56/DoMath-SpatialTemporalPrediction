@@ -15,14 +15,14 @@ def create_random_node(alpha, gamma, n, i):
 
 if __name__ == '__main__':
     NUM_SIMS = 150
-    N = 500000
+    N = 50000
     I_INIT = 10
     E_INIT = 0
     R_INIT = 0
     S_INIT = N - I_INIT - E_INIT - R_INIT
     TIME_STEPS = 50
-    NODES = 1
-    FILE_PATH = 'data/fixed-parameters/150sims_50days_1nodes.npy'
+    NODES = 10
+    FILE_PATH = 'data/fixed-parameters/150sims_50days_10nodes.npy'
 
     all_data = []
 
