@@ -5,13 +5,13 @@ from GCRNN import GCRNN
 from GCLSTM import GCLSTM
 
 if __name__ == '__main__':
-    DATA_FILE = 'data/fixed-parameters/150sims_50days_2nodes.npy'
-    NODES = 2
+    DATA_FILE = 'data/fixed-parameters/150sims_50days_1nodes.npy'
+    NODES = 1
     PREVIOUS_STEPS = 20
     FUTURE_STEPS = 1
     STRIDE = 5
 
-    HIDDEN_SIZE = 64
+    HIDDEN_SIZE = 128
     TRAIN_NUM = 100
     VAL_NUM = 50
     EPOCHS = 100
@@ -19,7 +19,7 @@ if __name__ == '__main__':
     LR_DECAY = 0.9
     BATCH_SIZE = 300
 
-    model = GCLSTM(NODES, 4, PREVIOUS_STEPS, FUTURE_STEPS, HIDDEN_SIZE)
+    model = LSTMVectorized(NODES, 4, PREVIOUS_STEPS, FUTURE_STEPS, HIDDEN_SIZE)
 
     model.train_model(DATA_FILE,
                       TRAIN_NUM,
@@ -31,7 +31,7 @@ if __name__ == '__main__':
                       optim=torch.optim.Adam,
                       batch_size=BATCH_SIZE)
 
-    torch.save(model.state_dict(), 'models/10_nodes/na.pt')
+    torch.save(model.state_dict(), 'models/1_nodes/veclstm128.pt')
 
     model.plot_loss(10)
 

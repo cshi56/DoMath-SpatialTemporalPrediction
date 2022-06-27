@@ -173,10 +173,10 @@ def graph_compare_rnn_lstm(rnn_model, lstm_model, sim, prev_steps, time_steps, n
 
 
 if __name__ == '__main__':
-    rnn = RNNVectorized(10, 4, 20, 1, 64)
+    rnn = RNNVectorized(1, 4, 20, 1, 16)
     rnn.load_state_dict(torch.load('models/10_nodes/vecrnn.pt'))
 
-    lstm = LSTMVectorized(10, 4, 20, 1, 64)
+    lstm = LSTMVectorized(1, 4, 20, 1, 16)
     lstm.load_state_dict(torch.load('models/10_nodes/veclstm.pt'))
 
     sims = np.load('data/fixed-parameters/150sims_50days_10nodes.npy')
