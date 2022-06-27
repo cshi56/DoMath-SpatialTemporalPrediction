@@ -17,7 +17,7 @@ if __name__ == '__main__':
     EPOCHS = 100
     INITIAL_LR = 0.001
     LR_DECAY = 0.9
-    BATCH_SIZE = 300
+    BATCH_SIZE = 1
 
     model = LSTMVectorized(NODES, 4, PREVIOUS_STEPS, FUTURE_STEPS, HIDDEN_SIZE)
 

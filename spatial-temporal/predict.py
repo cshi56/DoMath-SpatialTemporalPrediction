@@ -75,14 +75,14 @@ def lstm_predict(model, sim, prev_steps, time_steps, num_nodes):
     return unvectorize(future_data, num_nodes) * max_pop
 
 
-def graph_compare_rnn(model, sim, prev_steps, time_steps, num_nodes):
+def graph_compare_rnn(model, sim, prev_steps, time_steps, num_nodes, num_hidden):
     real_data = sim[:, :time_steps + prev_steps]
     predicted_data = rnn_predict(model, sim, prev_steps, time_steps, num_nodes)
     for node_dex in range(num_nodes):
         plt.plot(real_data[node_dex][:prev_steps + time_steps, 2], c='black', lw=1, label='Ground truth')
         plt.plot(range(prev_steps, prev_steps + time_steps), predicted_data[node_dex][:, 2],
                  ls='dotted', lw=2, c='red', label='Predicted values')
-        title = 'RNN prediction given data from days 1-' + str(prev_steps)
+        title = 'RNN prediction given data from days 1-' + str(prev_steps) + "\nhidden features: " + str(num_hidden)
         plt.title(title)
         plt.legend()
         plt.xlabel('Days')
@@ -90,14 +90,14 @@ def graph_compare_rnn(model, sim, prev_steps, time_steps, num_nodes):
         plt.show()
 
 
-def graph_compare_lstm(model, sim, prev_steps, time_steps, num_nodes):
+def graph_compare_lstm(model, sim, prev_steps, time_steps, num_nodes, num_hidden):
     real_data = sim[:, :time_steps + prev_steps]
     predicted_data = lstm_predict(model, sim, prev_steps, time_steps, num_nodes)
     for node_dex in range(num_nodes):
         plt.plot(real_data[node_dex][:prev_steps + time_steps, 2], c='black', lw=1, label='Ground truth')
         plt.plot(range(prev_steps, prev_steps + time_steps), predicted_data[node_dex][:, 2],
                  ls='dotted', lw=2, c='red', label='Predicted values')
-        title = 'RNN prediction given data from days 1-' + str(prev_steps)
+        title = 'RNN prediction given data from days 1-' + str(prev_steps) + "\nhidden features: " + str(num_hidden)
         plt.title(title)
         plt.legend()
         plt.xlabel('Days')
@@ -105,7 +105,7 @@ def graph_compare_lstm(model, sim, prev_steps, time_steps, num_nodes):
         plt.show()
 
 
-def graph_compare_rnn_lstm(rnn_model, lstm_model, sim, prev_steps, time_steps, num_nodes, num_sims):
+def graph_compare_rnn_lstm(rnn_model, lstm_model, sim, prev_steps, time_steps, num_nodes, num_sims, num_hidden):
     if num_nodes == 1:
         rows, cols = 1, 1
     elif num_nodes == 2:
@@ -166,22 +166,24 @@ def graph_compare_rnn_lstm(rnn_model, lstm_model, sim, prev_steps, time_steps, n
         ax.set_title('Node ' + str(node_dex + 1))
         ax.set(xlabel='Days', ylabel='Infected subjects')
 
-    title = 'RNN and LSTM predictions given data from days 1-' + str(prev_steps)
+    title = 'RNN and LSTM predictions given data from days 1-' + str(prev_steps) + "\nhidden features: " + str(num_hidden)
     plt.suptitle(title)
     fig.legend()
     plt.show()
 
 
 if __name__ == '__main__':
-    rnn = RNNVectorized(1, 4, 20, 1, 16)
-    rnn.load_state_dict(torch.load('models/10_nodes/vecrnn.pt'))
+    hidden_feats = 128
+    num_nodes = 1
+    rnn = RNNVectorized(num_nodes, 4, 20, 1, 64)
+    rnn.load_state_dict(torch.load('models/1_nodes/vecrnn.pt'))
 
-    lstm = LSTMVectorized(1, 4, 20, 1, 16)
-    lstm.load_state_dict(torch.load('models/10_nodes/veclstm.pt'))
+    lstm = LSTMVectorized(num_nodes, 4, 20, 1, hidden_feats)
+    lstm.load_state_dict(torch.load('models/1_nodes/veclstm128.pt'))
 
-    sims = np.load('data/fixed-parameters/150sims_50days_10nodes.npy')
+    sims = np.load('data/fixed-parameters/150sims_50days_1nodes.npy')
 
     for i in range(100, 150):
         sim = sims[i]
-        graph_compare_rnn_lstm(rnn, lstm, sim, 20, 30, 10, 100)
+        graph_compare_lstm(lstm, sim, 20, 30, num_nodes, hidden_feats)
 
