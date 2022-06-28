@@ -8,6 +8,22 @@ import matplotlib.pyplot as plt
 from simulation import Node, Simulation
 
 
+def WAPE(y, y_h):
+    nodes = y.shape[0]
+    steps = y.shape[1]
+    numerator = 0
+    denominator = 0
+
+    for i in range(nodes):
+        for j in range(steps):
+            y_flat = y[i, j, 2]
+            yh_flat = y_h[i, j, 2]
+            numerator += np.abs(y_flat - yh_flat)
+            denominator += np.abs(y_flat)
+
+    return numerator / denominator
+
+
 def unvectorize(sim, num_nodes):
     sim = np.asarray(sim)
     ret = []
@@ -78,6 +94,10 @@ def lstm_predict(model, sim, prev_steps, time_steps, num_nodes):
 def graph_compare_rnn(model, sim, prev_steps, time_steps, num_nodes, num_hidden):
     real_data = sim[:, :time_steps + prev_steps]
     predicted_data = rnn_predict(model, sim, prev_steps, time_steps, num_nodes)
+
+    last_30_real = real_data[:, 20:, :]
+    loss = WAPE(last_30_real, predicted_data)
+
     for node_dex in range(num_nodes):
         plt.plot(real_data[node_dex][:prev_steps + time_steps, 2], c='black', lw=1, label='Ground truth')
         plt.plot(range(prev_steps, prev_steps + time_steps), predicted_data[node_dex][:, 2],
@@ -88,11 +108,16 @@ def graph_compare_rnn(model, sim, prev_steps, time_steps, num_nodes, num_hidden)
         plt.xlabel('Days')
         plt.ylabel('Number of infected subjects')
         plt.show()
+    return loss
 
 
 def graph_compare_lstm(model, sim, prev_steps, time_steps, num_nodes, num_hidden):
     real_data = sim[:, :time_steps + prev_steps]
     predicted_data = lstm_predict(model, sim, prev_steps, time_steps, num_nodes)
+
+    last_30_real = real_data[:, 20:, :]
+    loss = WAPE(last_30_real, predicted_data)
+
     for node_dex in range(num_nodes):
         plt.plot(real_data[node_dex][:prev_steps + time_steps, 2], c='black', lw=1, label='Ground truth')
         plt.plot(range(prev_steps, prev_steps + time_steps), predicted_data[node_dex][:, 2],
@@ -102,7 +127,9 @@ def graph_compare_lstm(model, sim, prev_steps, time_steps, num_nodes, num_hidden
         plt.legend()
         plt.xlabel('Days')
         plt.ylabel('Number of infected subjects')
-        plt.show()
+        plt.show(block=False)
+        plt.close()
+    return loss
 
 
 def graph_compare_rnn_lstm(rnn_model, lstm_model, sim, prev_steps, time_steps, num_nodes, num_sims, num_hidden):
@@ -152,7 +179,7 @@ def graph_compare_rnn_lstm(rnn_model, lstm_model, sim, prev_steps, time_steps, n
     for node_dex in range(num_nodes):
         ax = fig.add_subplot(rows, cols, node_dex + 1)
         for simul in range_sims:
-            ax.plot(range(prev_steps - 1, prev_steps + time_steps), simul[node_dex][:, 3],  c='yellow', alpha=0.1)
+            ax.plot(range(prev_steps - 1, prev_steps + time_steps), simul[node_dex][:, 3], c='yellow', alpha=0.1)
         if node_dex == 0:
             ax.plot(0, lw=1, c='black', label='Ground truth')
             ax.plot(0, ls='dotted', lw=2, c='red', label='RNN predicted values')
@@ -160,30 +187,35 @@ def graph_compare_rnn_lstm(rnn_model, lstm_model, sim, prev_steps, time_steps, n
             ax.plot(0, c='yellow', label='Range')
         ax.plot(real_data[node_dex][:prev_steps + time_steps, 2], c='black', lw=1)
         ax.plot(range(prev_steps, prev_steps + time_steps), predicted_data_rnn[node_dex][:, 2],
-                 ls='dotted', lw=2, c='red')
+                ls='dotted', lw=2, c='red')
         ax.plot(range(prev_steps, prev_steps + time_steps), predicted_data_lstm[node_dex][:, 2],
-                 ls='dotted', lw=2, c='green')
+                ls='dotted', lw=2, c='green')
         ax.set_title('Node ' + str(node_dex + 1))
         ax.set(xlabel='Days', ylabel='Infected subjects')
 
-    title = 'RNN and LSTM predictions given data from days 1-' + str(prev_steps) + "\nhidden features: " + str(num_hidden)
+    title = 'RNN and LSTM predictions given data from days 1-' + str(prev_steps) + "\nhidden features: " + str(
+        num_hidden)
     plt.suptitle(title)
     fig.legend()
     plt.show()
 
 
 if __name__ == '__main__':
-    hidden_feats = 128
+    hidden_feats = 64
     num_nodes = 1
     rnn = RNNVectorized(num_nodes, 4, 20, 1, 64)
     rnn.load_state_dict(torch.load('models/1_nodes/vecrnn.pt'))
 
     lstm = LSTMVectorized(num_nodes, 4, 20, 1, hidden_feats)
-    lstm.load_state_dict(torch.load('models/1_nodes/veclstm128.pt'))
+    lstm.load_state_dict(torch.load('models/1_nodes/veclstm.pt'))
 
     sims = np.load('data/fixed-parameters/150sims_50days_1nodes.npy')
 
+    total_loss = 0
+
     for i in range(100, 150):
         sim = sims[i]
-        graph_compare_lstm(lstm, sim, 20, 30, num_nodes, hidden_feats)
-
+        loss = graph_compare_lstm(lstm, sim, 20, 30, num_nodes, hidden_feats)
+        total_loss += loss
+    total_loss = total_loss / len(range(100, 150))
+    print("loss: " + str(total_loss))
