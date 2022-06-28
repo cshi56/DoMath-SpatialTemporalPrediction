@@ -35,7 +35,6 @@ class LSTMVectorized(AbstractLSTM):
 
         self.hidden_size = hidden_size
         self.num_feat = num_feats
-
         self.wf_matrix = nn.Linear(hidden_size + num_feats * num_nodes, hidden_size)
         self.wi_matrix = nn.Linear(hidden_size + num_feats * num_nodes, hidden_size)
         self.wo_matrix = nn.Linear(hidden_size + num_feats * num_nodes, hidden_size)
